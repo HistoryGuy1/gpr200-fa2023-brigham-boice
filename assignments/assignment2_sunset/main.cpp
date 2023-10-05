@@ -22,10 +22,10 @@ int SCREEN_HEIGHT = 720;
 
 Vertex vertices[4] = {
 	//x    y    z    u    v
-   { -1, -1, 0, 0, 0 }, //Bottom left
-   {  1, -1, 0, 1, 0 }, //Bottom right
-   {  1,  1, 0, 1, 1 },  //Top right
-   { -1,  1, 0, 0, 1 }  //Top left
+   { -1,  -1,   0,   0,   0 }, //Bottom left
+   {  1,  -1,   0,   1,   0 }, //Bottom right
+   {  1,   1,   0,   1,   1 },  //Top right
+   { -1,   1,   0,   0,   1 }  //Top left
 };
 
 unsigned int indices[6] = {

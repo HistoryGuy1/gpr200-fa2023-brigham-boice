@@ -9,6 +9,7 @@
 #include <imgui_impl_opengl3.h>
 
 #include <ew/shader.h>
+#include <bb/texture.cpp>
 
 struct Vertex {
 	float x, y, z;
@@ -58,19 +59,53 @@ int main() {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
 
-	ew::Shader shader("assets/vertexShader.vert", "assets/fragmentShader.frag");
+	ew::Shader backgroundShader("assets/background.vert", "assets/background.frag");
+	ew::Shader characterShader("assets/character.vert", "assets/character.frag");
 
 	unsigned int quadVAO = createVAO(vertices, 4, indices, 6);
 
 	glBindVertexArray(quadVAO);
 
+	unsigned int textureA = loadTexture("assets/bricks.jpg", GL_REPEAT, GL_LINEAR);
+	unsigned int textureB = loadTexture("assets/smoke.png", GL_REPEAT, GL_LINEAR);
+	unsigned int textureGraf = loadTexture("assets/banksy.png", GL_REPEAT, GL_LINEAR);
+	unsigned int textureVine = loadTexture("assets/vines.png", GL_REPEAT, GL_LINEAR);
+
+
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		//Set uniforms
-		shader.use();
+		//Draw Background
+		backgroundShader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureA);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, textureB);
+		//Make sampler2D _BrickTexture sample from unit 0
+		backgroundShader.setInt("_BrickTexture", 0);
+		//Make sampler2D _MarioTexture sample from unit 1
+		backgroundShader.setInt("_SmokeTexture", 1);
+
+		float time = glfwGetTime();
+		backgroundShader.setFloat("iTime", time);
+
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, NULL);
+
+		//Draw Character
+		characterShader.use();
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, textureGraf);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, textureVine);
+		//Make sampler2D _BrickTexture sample from unit 0
+		characterShader.setInt("_GuyTexture", 2);
+		//Make sampler2D _MarioTexture sample from unit 1
+		characterShader.setInt("_VineTexture", 3);
+
 
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, NULL);
 
