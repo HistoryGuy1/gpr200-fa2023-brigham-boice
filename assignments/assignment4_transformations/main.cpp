@@ -11,6 +11,9 @@
 #include <ew/shader.h>
 #include <ew/ewMath/vec3.h>
 #include <ew/procGen.h>
+#include <../core/bb/transformations.h>
+
+const int NUM_CUBES = 4;
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
@@ -55,7 +58,15 @@ int main() {
 	
 	//Cube mesh
 	ew::Mesh cubeMesh(ew::createCube(0.5f));
-	
+
+	myLib::Transform cubeTransforms[NUM_CUBES];
+
+	cubeTransforms[0].position = ew::Vec3(-0.5f, 0.5f, 0);
+	cubeTransforms[1].position = ew::Vec3(0.5f, 0.5f, 0);
+	cubeTransforms[2].position = ew::Vec3(-0.5f, -0.5f, 0);
+	cubeTransforms[3].position = ew::Vec3(0.5f, -0.5f, 0);
+
+
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
@@ -65,9 +76,10 @@ int main() {
 		//Set uniforms
 		shader.use();
 
-		//TODO: Set model matrix uniform
-
-		cubeMesh.draw();
+		for (int i = 0; i < NUM_CUBES; ++i) {
+			shader.setMat4("Model", cubeTransforms[i].getModelMatrix());
+			cubeMesh.draw();
+		}
 
 		//Render UI
 		{
@@ -75,8 +87,21 @@ int main() {
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui::NewFrame();
 
-			ImGui::Begin("Transform");
-			ImGui::End();
+			for (size_t i = 0; i < NUM_CUBES; i++)
+			{
+				ImGui::PushID(i);
+
+				if (ImGui::CollapsingHeader("Transform")) 
+				{
+					ImGui::DragFloat3("Position", &cubeTransforms[i].position.x, 0.05f);
+					ImGui::DragFloat3("Rotation", &cubeTransforms[i].rotation.x, 1.0f);
+					ImGui::DragFloat3("Scale", &cubeTransforms[i].scale.x, 0.05f);
+				}
+				ImGui::PopID();
+			}
+
+			//ImGui::Begin("Transform");
+			//ImGui::End();
 
 			ImGui::Render();
 			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
