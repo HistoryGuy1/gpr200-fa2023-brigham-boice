@@ -19,7 +19,7 @@ namespace bbLib {
 		void setVec3(const std::string& name, float x, float y, float z) const;
 		void setVec4(const std::string& name, float x, float y, float z, float w) const;
 	private:
-		unsigned int m_id; //OpenGL program handle
+		unsigned int m_id;
 	};
 
 }
