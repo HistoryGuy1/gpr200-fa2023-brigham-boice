@@ -171,6 +171,31 @@ int main() {
 			std::string pitch_text = "Pitch: " + std::to_string((int)cameraControls.pitch);
 			ImGui::Text(pitch_text.c_str());
 
+			if (ImGui::Button("Reset")) 
+			{
+				//Reset
+				position = ew::Vec3(0, 0, 5);
+				target = ew::Vec3(0, 0, 0);
+				orthographic = false;
+				orthoSize = 6.0f;
+				fov = 60.0f;
+				nearPlane = 0.1f;
+				farPlane = 100.0f;
+
+				//Set
+				cam.position = position;
+				cam.target = target;
+				cam.orthographic = orthographic;
+				cam.fov = fov;
+				cam.orthoSize = orthoSize;
+				cam.nearPlane = nearPlane;
+				cam.farPlane = farPlane;
+				cam.aspectRatio = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
+				
+				cameraControls.yaw = 0;
+				cameraControls.pitch = 0;
+			}
+
 			ImGui::End();
 			
 			ImGui::Render();
