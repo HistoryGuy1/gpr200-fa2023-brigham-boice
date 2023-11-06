@@ -98,7 +98,6 @@ namespace myLib {
 	//Orthographic projection
 	inline ew::Mat4 Orthographic(float height, float aspect, float near, float far) 
 	{
-		
 		float width = height * aspect;
 
 		float r = width / 2.0f;
@@ -123,15 +122,14 @@ namespace myLib {
 	{
 		
 		ew::Mat4 proj(
-			1.0f/(tan(fov/2.0f) * aspect), 0,            0,                       0,
-			0,                             1/tan(fov/2), 0,                       0,
-			0,                             0,            (near+far)/(near-far),   (2.0f * far * near)/(near - far),
-			0,                             0,            -1,                      0
+			1.0f/(tan(fov/2.0f) * aspect), 0,            0,                     0,
+			0,                             1/tan(fov/2), 0,                     0,
+			0,                             0,            (near+far)/(near-far), (2.0f * far * near)/(near - far),
+			0,                             0,            -1,                    0
 		);
 
 		return proj;
 	};
-
 
 	struct Transform {
 		ew::Vec3 position = ew::Vec3(0.0f, 0.0f, 0.0f);
@@ -145,5 +143,4 @@ namespace myLib {
 				myLib::Scale(scale);
 		}
 	};
-
 }
