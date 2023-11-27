@@ -1,5 +1,6 @@
 #include "procGen.h"
 #include <cmath>
+#include <cstdlib>
 
 namespace myLib {
 	ew::MeshData myLib::createSphere(float radius, int numSegments)
@@ -18,20 +19,22 @@ namespace myLib {
 
 				ew::Vertex v;
 
-				v.pos.x = radius * cos(theta) * sin(phi);
-				v.pos.y = radius * cos(phi);
-				v.pos.z = radius * sin(theta) * sin(phi);
+				srand((unsigned)time(0));
+
+				v.pos.x = ((rand() % 10) + radius) * cos(theta) * sin(phi);
+				v.pos.y = ((rand() % 10) + radius) * cos(phi);
+				v.pos.z = ((rand() % 10) + radius) * sin(theta) * sin(phi);
 
 				v.normal = ew::Normalize(ew::Vec3(cos(theta) * sin(phi), cos(phi), sin(theta) * sin(phi)));
 
-				v.uv = ew::Vec2((float)col / (float)numSegments, (float)row / (float)numSegments);
+				v.uv = ew::Vec2(1- (float)col / (float)numSegments, (float)row / (float)numSegments);
 
 				sphereData.vertices.push_back(v);
 			}
 		}
 
 		int columns = numSegments + 1;
-			//Skip top and bottom poles
+
 		for (int row = 0; row < numSegments; row++) 
 		{
 			for (int col = 0; col < numSegments; col++) 
@@ -121,7 +124,7 @@ namespace myLib {
 			cylinderData.vertices.push_back(vBottom);
 		}
 
-		int startB = cylinderData.vertices.size(); //Index of second ring vertex
+		int startB = cylinderData.vertices.size(); //Index of second ring vertexstartSide
 
 		// Bottom ring vertices
 		for (int i = 0; i <= numSegments; i++)
