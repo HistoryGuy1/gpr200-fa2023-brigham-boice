@@ -18,6 +18,8 @@
 
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+ew::Vec3 moveOnUnitCircle(float earthAngle, float distance);
+float lerp(float a, float b, float f);
 void resetCamera(ew::Camera& camera, ew::CameraController& cameraController);
 
 struct Light {
@@ -70,41 +72,94 @@ int main() {
 	ImGui_ImplOpenGL3_Init();
 
 	//Global settings
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
 
-	ew::Shader shader("assets/defaultLit.vert", "assets/defaultLit.frag");
-	unsigned int brickTexture = ew::loadTexture("assets/brick_color.jpg",GL_REPEAT,GL_LINEAR);
+	glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	Material material{
+		material.ambientK = 0.05f,
+		material.diffuseK = 1.0f,
+		material.specular = 0.5f,
+		material.shininess = 1.0f
+	};
+
+	Material moonMaterial{
+		moonMaterial.ambientK = 0.05f,
+		moonMaterial.diffuseK = 4.0f,
+		moonMaterial.specular = 0.1f,
+		moonMaterial.shininess = 0.05f
+	};
+
+	//----------------Earth---------------------
+
+	ew::Shader earthShader("assets/defaultLit.vert", "assets/defaultLit.frag");
+	unsigned int earthTexture = ew::loadTexture("assets/world5k.png", GL_REPEAT, GL_LINEAR);
+	unsigned int nightTexture = ew::loadTexture("assets/worldN.jpg", GL_REPEAT, GL_LINEAR);
+
+	ew::Mesh earthMesh(ew::createSphere(6357.0f * Constants::scaleRatio, 640));
+	ew::Transform earthTransform;
+	earthTransform.position = ew::Vec3(0.0f, 0.0f, 0.0f);
+	earthTransform.rotation = ew::Vec3(0.0f, 0.0f, 0.0f);
+	float earthAxialTilt = 180.0f + 23.4f;
+	float earthRotY = 0.0f;
+	float earthSpinSpeed = 10.0f;
+
+	//Add height here
+	earthMesh.load(ew::createEarth(40075.0f * Constants::scaleRatio, 20000.0f * Constants::scaleRatio, 6357.0f * Constants::scaleRatio, 640, 1.0f));
+
+	//-------------------Clouds------------------------
+
+	ew::Shader sphereShader("assets/cloud.vert", "assets/cloud.frag");
+	unsigned int cloudTexture = ew::loadTexture("assets/cloud.png", GL_REPEAT, GL_LINEAR);
+
+	ew::Mesh cloudMesh(ew::createSphere((6357.0f + 10.0f) * Constants::scaleRatio, 640));
+	ew::Transform cloudTransform;
+	cloudTransform.position = ew::Vec3(0.0f, 0.0f, 0.0f);
+	cloudTransform.rotation = ew::Vec3(0.0f, 0.0f, 0.0f);
+
+	//-------------------Moon----------------------
+
+	ew::Shader moonShader("assets/moon.vert", "assets/moon.frag");
+	unsigned int moonTexture = ew::loadTexture("assets/moon1k.jpg", GL_REPEAT, GL_LINEAR);
+
+	float moonDistance = 384400.0f * Constants::scaleRatio;
+
+	ew::Mesh moonMesh(ew::createSphere(1737.4f * Constants::scaleRatio, 64));
+	ew::Transform moonTransform;
+	moonTransform.position = ew::Vec3(moonDistance, 0.0f, 0.0f);
+	moonTransform.rotation = ew::Vec3(0.0f, 0.0f, 0.0f);
+
+	//----------------------Sun------------------------
 
 	ew::Shader emissiveShader("assets/emissive.vert", "assets/emissive.frag");
 
-	camera.farPlane = 20000.0f;
-
-	Material material{
-		material.ambientK = 0.1f,
-		material.diffuseK = 1.0f,
-		material.specular = 1.0f,
-		material.shininess = 50.0f
-	};
-
-	ew::Mesh earthMesh(ew::createSphere(6357.0f * Constants::scaleRatio, 64));
-	ew::Transform earthTransform;
-	earthTransform.position = ew::Vec3(0.0f, 0.0f, 0.0f);
-
-	//ew::Mesh planeMesh(ew::createPlane(5.0f, 5.0f, 10));
-	//ew::Transform planeTransform;
-	//planeTransform.position = ew::Vec3(0, -1.0, 0);
+	float sunDistance = 149600000.0f * Constants::scaleRatio;
 
 	ew::Mesh sunMesh = ew::createSphere(1392000.0f * Constants::scaleRatio, 20);
 	ew::Transform sunSphereTransform;
 	Light sunLight;
-	sunLight.position = ew::Vec3(149600000.0f * Constants::scaleRatio, 0.0f, 0.0f);
-	sunLight.color = ew::Vec3(253.0f / 255.0f, 184.0f / 255.0f, 19.0f / 255.0f);
+	sunLight.position = ew::Vec3(sunDistance, 0.0f, 0.0f);
+	sunLight.color = ew::Vec3(253.0f / 255.0f, 184.0f / 255.0f, 55.0f / 255.0f);
 
-	float lightintensity = 0.7f;
+	float lightintensity = 1.0f;
 	ew::Vec3 colorOnEarth = ew::Vec3(lightintensity, lightintensity, lightintensity);
 
+	//---------------------Stars---------------------
+
+	ew::Shader starShader("assets/stars.vert", "assets/stars.frag");
+	unsigned int starTexture = ew::loadTexture("assets/starmap16k.jpg", GL_REPEAT, GL_LINEAR);
+
+	ew::Mesh starMesh(ew::createSphere(18000.0f, 640));
+	ew::Transform starTransform;
+	cloudTransform.position = ew::Vec3(0.0f, 0.0f, 0.0f);
+	cloudTransform.rotation = ew::Vec3(0.0f, 0.0f, 0.0f);
+
+	camera.farPlane = 20000.0f;
 	resetCamera(camera, cameraController);
 	
 	while (!glfwWindowShouldClose(window)) {
@@ -121,36 +176,123 @@ int main() {
 		//RENDER
 		glClearColor(bgColor.x, bgColor.y,bgColor.z,1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_BLEND);
 
-		shader.use();
-		glBindTexture(GL_TEXTURE_2D, brickTexture);
-		shader.setInt("_Texture", 0);
-		shader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
+		//--------------------Earth------------------
 
-		shader.setFloat("ambientK", material.ambientK);
-		shader.setFloat("diffuseK", material.diffuseK);
-		shader.setFloat("specularK", material.specular);
-		shader.setFloat("shininess", material.shininess);
-		shader.setVec3("_ViewPosition", camera.position);
-		shader.setInt("numLights", 1);
-		shader.setInt("useBlinnPhong", true);
+		earthRotY += earthSpinSpeed * deltaTime;
+		float scale = (cos(time) + 1.0f) / 2.0f;
+		scale = 1;
+		earthMesh.load(ew::createEarth(40075.0f * Constants::scaleRatio, 20000.0f * Constants::scaleRatio, 6357.0f * Constants::scaleRatio, 64, scale));
 
-		shader.setVec3("_Lights[0].position", sunLight.position);
-		shader.setVec3("_Lights[0].color", colorOnEarth);
+		earthTransform.rotation = ew::Vec3(
+			lerp(180.0f, earthAxialTilt, scale),
+			lerp(earthRotY / 365.25f, earthRotY, scale),
+			lerp(180.0f, 0.0f, scale));
 
-		//Draw shapes
-		/*shader.setMat4("_Model", planeTransform.getModelMatrix());
-		planeMesh.draw();*/
+		earthShader.use();
 
-		shader.setMat4("_Model", earthTransform.getModelMatrix());
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, earthTexture);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, nightTexture);
+		earthShader.setInt("_Texture", 0);
+		earthShader.setInt("_TextureNight", 1);
+
+		earthShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
+
+		earthShader.setFloat("ambientK", material.ambientK);
+		earthShader.setFloat("diffuseK", material.diffuseK);
+		earthShader.setFloat("specularK", material.specular);
+		earthShader.setFloat("shininess", material.shininess);
+		earthShader.setVec3("_ViewPosition", camera.position);
+		earthShader.setInt("numLights", 1);
+		earthShader.setInt("useBlinnPhong", true);
+
+		earthShader.setVec3("_Lights[0].position", sunLight.position);
+		earthShader.setVec3("_Lights[0].color", colorOnEarth);
+
+		earthShader.setMat4("_Model", earthTransform.getModelMatrix());
 		earthMesh.draw();
 
-		//TODO: Render sun light
+		//-----------------Clouds----------------------
+
+		cloudTransform.rotation = ew::Vec3(earthAxialTilt, earthRotY / 1.2f, 0.0f);
+
+		sphereShader.use();
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, cloudTexture);
+		sphereShader.setInt("_Texture", 2);
+
+		sphereShader.setMat4("_Model", cloudTransform.getModelMatrix());
+		sphereShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
+
+		sphereShader.setFloat("ambientK", material.ambientK);
+		sphereShader.setFloat("diffuseK", material.diffuseK);
+		sphereShader.setFloat("specularK", material.specular);
+		sphereShader.setFloat("shininess", material.shininess);
+		sphereShader.setVec3("_ViewPosition", camera.position);
+		sphereShader.setInt("numLights", 1);
+		sphereShader.setInt("useBlinnPhong", true);
+
+		sphereShader.setVec3("_Lights[0].position", sunLight.position);
+		sphereShader.setVec3("_Lights[0].color", colorOnEarth);
+
+		cloudMesh.draw();
+
+		//-----Math for sun, moon, and stars
+
+		float spaceRotation = -earthRotY / 365.25f;
+
+		//-----------------------Moon-------------------------
+
+		moonTransform.position = moveOnUnitCircle(spaceRotation * 12.4f, moonDistance);
+		moonTransform.rotation = ew::Vec3(0.0f, -spaceRotation * 12.4f, 0.0f);
+
+		moonShader.use();
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, moonTexture);
+		moonShader.setInt("_Texture", 4);
+		moonShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
+
+		moonShader.setFloat("ambientK", moonMaterial.ambientK);
+		moonShader.setFloat("diffuseK", moonMaterial.diffuseK);
+		moonShader.setFloat("specularK", moonMaterial.specular);
+		moonShader.setFloat("shininess", moonMaterial.shininess);
+		moonShader.setVec3("_ViewPosition", camera.position);
+		moonShader.setInt("numLights", 1);
+		moonShader.setInt("useBlinnPhong", true);
+
+		moonShader.setVec3("_Lights[0].position", sunLight.position);
+		moonShader.setVec3("_Lights[0].color", colorOnEarth);
+
+		moonShader.setMat4("_Model", moonTransform.getModelMatrix());
+		moonMesh.draw();
+
+		//------------------------Stars---------------------
+
+		starTransform.rotation = ew::Vec3(0.0f, spaceRotation, 0.0f);
+
+		starShader.use();
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, starTexture);
+		starShader.setInt("_Texture", 3);
+
+		starShader.setMat4("_Model", starTransform.getModelMatrix());
+		starShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
+
+		starMesh.draw();
+
+		//-------------------------Sun---------------------
+
+		sunLight.position = moveOnUnitCircle(spaceRotation, sunDistance);
+
 		emissiveShader.use();
 		emissiveShader.setVec3("_Color", sunLight.color);
 		emissiveShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
 
 		sunSphereTransform.position = sunLight.position;
+
 		emissiveShader.setMat4("_Model", sunSphereTransform.getModelMatrix());
 		sunMesh.draw();
 
@@ -181,10 +323,8 @@ int main() {
 			}
 			ImGui::ColorEdit3("BG color", &bgColor.x);
 
-			ImGui::SliderFloat("AmbientK", &material.ambientK, 0.0f, 1.0f);
-			ImGui::SliderFloat("DiffuseK", &material.diffuseK, 0.0f, 1.0f);
-			ImGui::SliderFloat("SpecularK", &material.specular, 0.0f, 1.0f);
-			ImGui::SliderFloat("Shininess", &material.shininess, 2.0f, 256.0f);
+			ImGui::SliderFloat("Spin Speed", &earthSpinSpeed, 0.0f, 360.0f);
+
 
 			ImGui::End();
 			
@@ -202,6 +342,22 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 	SCREEN_WIDTH = width;
 	SCREEN_HEIGHT = height;
+}
+
+ew::Vec3 moveOnUnitCircle(float earthAngle, float distance)
+{
+	ew::Vec3 finalPos = ew::Vec3(0.0f);
+	//angle / days in year * to radians
+	float angleInRadians = earthAngle * (3.141592f / 180.0f);
+	finalPos.x = cos(angleInRadians) * distance;
+	finalPos.z = sin(angleInRadians) * distance;
+
+	return finalPos;
+}
+
+float lerp(float a, float b, float f)
+{
+	return a * (1.0 - f) + (b * f);
 }
 
 void resetCamera(ew::Camera& camera, ew::CameraController& cameraController) {

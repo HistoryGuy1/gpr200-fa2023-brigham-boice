@@ -57,6 +57,7 @@ namespace ew {
 		createCubeFace(ew::Vec3{ +0.0f,+0.0f,-1.0f }, size, &mesh); //Back
 		return mesh;
 	}
+
 	MeshData createPlane(float width, float height, int subdivisions)
 	{
 		//VERTICES
@@ -92,6 +93,105 @@ namespace ew {
 		}
 		return mesh;
 	}
+
+	float lerp(float a, float b, float f)
+	{
+		return a * (1.0 - f) + (b * f);
+	}
+
+	MeshData createEarth(float width, float height, float radius, int subdivisions, float scale)
+	{
+		MeshData mesh;
+
+		//VERTICES
+		float thetaStep = ew::TAU / subdivisions;
+		float phiStep = ew::PI / subdivisions;
+		int columns = subdivisions + 1;
+		for (size_t row = 0; row <= subdivisions; row++)
+		{
+			float phi = row * phiStep;
+			for (size_t col = 0; col <= subdivisions; col++)
+			{
+				float theta = thetaStep * col;
+
+				Vertex v;
+
+				//plane
+				ew::Vec2 planeUV = ew::Vec2(0.0f);
+				planeUV.x = ((float)col / subdivisions);
+				planeUV.y = ((float)row / subdivisions);
+
+				ew::Vec3 planePosition = ew::Vec3(0.0f);
+				planePosition.x = -width / 2 + width * planeUV.x;
+				planePosition.y = 0;
+				planePosition.z = height / 2 - height * planeUV.y;
+
+				ew::Vec3 planeNormal = ew::Vec3(0, 1, 0);
+
+				//sphere
+				ew::Vec3 sphereNormal = ew::Vec3(0.0f);
+				sphereNormal.x = cosf(theta) * sinf(phi);
+				sphereNormal.y = cosf(phi);
+				sphereNormal.z = sinf(theta) * sinf(phi);
+
+				ew::Vec3 spherePosition = ew::Vec3(0.0f);
+				spherePosition = sphereNormal * radius;
+
+				ew::Vec2 sphereUV = ew::Vec2(0.0f);
+				sphereUV.x = (float)col / subdivisions;
+				sphereUV.y = 1.0 - ((float)row / subdivisions);
+
+				v.pos = ew::Vec3(
+					lerp(planePosition.x, spherePosition.x, scale), 
+					lerp(planePosition.y, spherePosition.y, scale), 
+					lerp(planePosition.z, spherePosition.z, scale));
+				v.uv = ew::Vec2(
+					lerp(planeUV.x, sphereUV.x, scale),
+					lerp(planeUV.y, sphereUV.y, scale));
+				v.normal = ew::Vec3(
+					lerp(planeNormal.x, sphereNormal.x, scale),
+					lerp(planeNormal.y, sphereNormal.y, scale),
+					lerp(planeNormal.z, sphereNormal.z, scale));
+
+				mesh.vertices.push_back(v);
+			}
+		}
+		//VERTICES
+		for (size_t row = 0; row <= subdivisions; row++)
+		{
+			float phi = row * phiStep;
+			for (size_t col = 0; col <= subdivisions; col++)
+			{
+				float theta = thetaStep * col;
+				Vertex v;
+				v.normal.x = cosf(theta) * sinf(phi);
+				v.normal.y = cosf(phi);
+				v.normal.z = sinf(theta) * sinf(phi);
+				v.pos = v.normal * radius;
+				v.uv.x = (float)col / subdivisions;
+				v.uv.y = 1.0 - ((float)row / subdivisions);
+				mesh.vertices.push_back(v);
+			}
+		}
+
+		//INDICES
+		for (size_t row = 0; row < subdivisions; row++)
+		{
+			for (size_t col = 0; col < subdivisions; col++)
+			{
+				int start = row * columns + col;
+				mesh.indices.push_back(start);
+				mesh.indices.push_back(start + 1);
+				mesh.indices.push_back(start + columns + 1);
+				mesh.indices.push_back(start + columns + 1);
+				mesh.indices.push_back(start + columns);
+				mesh.indices.push_back(start);
+			}
+		}
+
+		return mesh;
+	}
+
 	MeshData createSphere(float radius, int subdivisions)
 	{
 		MeshData mesh;

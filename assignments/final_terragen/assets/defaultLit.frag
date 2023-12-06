@@ -23,6 +23,7 @@ uniform float specularK;
 uniform float shininess;
 
 uniform sampler2D _Texture;
+uniform sampler2D _TextureNight;
 
 void main() {
     vec3 normal = normalize(fs_in.WorldNormal);
@@ -55,6 +56,20 @@ void main() {
     }
 
     vec4 texColor = texture(_Texture, fs_in.UV);
-    vec3 resultColor = texColor.rgb * (ambient + diffuse + specular);
-    FragColor = vec4(resultColor, texColor.a);
+    vec4 texColorN = texture(_TextureNight, fs_in.UV);
+
+    vec3 mainColor = texColor.rgb * (ambient + diffuse);
+    mainColor += texColorN.rgb * (0.9f - (ambient + diffuse));
+    mainColor += texColor.rgb * specular * (1.0f - texColor.b * specular);
+
+    float fresnel = 3.0f * pow(1.0f - dot(normal, viewDir), 4.0f);
+    vec3 baseColor = vec3(0.0, 0.1f, 0.5f);
+    vec3 envColor = vec3(0.75f);
+
+    vec3 color = mix(baseColor, envColor, fresnel);
+
+    vec3 finalColor = mainColor + color * (ambient + diffuse);
+
+    FragColor = vec4(finalColor, texColor.a);
+
 }
