@@ -37,10 +37,10 @@ struct Material {
 int SCREEN_WIDTH = 1080;
 int SCREEN_HEIGHT = 720;
 
-const int scaleRatio = 1.0 / 100.0;
-
+//Variables
 float prevTime;
 ew::Vec3 bgColor = ew::Vec3(0.0f);
+
 
 ew::Camera camera;
 ew::CameraController cameraController;
@@ -81,18 +81,12 @@ int main() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	Material material{
+	Material material
+	{
 		material.ambientK = 0.05f,
 		material.diffuseK = 1.0f,
 		material.specular = 0.5f,
 		material.shininess = 1.0f
-	};
-
-	Material moonMaterial{
-		moonMaterial.ambientK = 0.05f,
-		moonMaterial.diffuseK = 4.0f,
-		moonMaterial.specular = 0.1f,
-		moonMaterial.shininess = 0.05f
 	};
 
 	//----------------Earth---------------------
@@ -110,7 +104,7 @@ int main() {
 	float earthSpinSpeed = 10.0f;
 
 	//Add height here
-	earthMesh.load(ew::createEarth(40075.0f * Constants::scaleRatio, 20000.0f * Constants::scaleRatio, 6357.0f * Constants::scaleRatio, 640, 1.0f));
+	earthMesh.load(ew::createEarth(40075.0f * Constants::scaleRatio, 20000.0f * Constants::scaleRatio, 6357.0f * Constants::scaleRatio, 640, 1.0f, 0.0f));
 
 	//-------------------Clouds------------------------
 
@@ -123,6 +117,14 @@ int main() {
 	cloudTransform.rotation = ew::Vec3(0.0f, 0.0f, 0.0f);
 
 	//-------------------Moon----------------------
+
+	Material moonMaterial
+	{
+		moonMaterial.ambientK = 0.05f,
+		moonMaterial.diffuseK = 2.5f,
+		moonMaterial.specular = 0.1f,
+		moonMaterial.shininess = 0.05f
+	};
 
 	ew::Shader moonShader("assets/moon.vert", "assets/moon.frag");
 	unsigned int moonTexture = ew::loadTexture("assets/moon1k.jpg", GL_REPEAT, GL_LINEAR);
@@ -144,7 +146,7 @@ int main() {
 	ew::Transform sunSphereTransform;
 	Light sunLight;
 	sunLight.position = ew::Vec3(sunDistance, 0.0f, 0.0f);
-	sunLight.color = ew::Vec3(253.0f / 255.0f, 184.0f / 255.0f, 55.0f / 255.0f);
+	sunLight.color = ew::Vec3(253.0f / 255.0f, 244.0f / 255.0f, 191.0f / 255.0f);
 
 	float lightintensity = 1.0f;
 	ew::Vec3 colorOnEarth = ew::Vec3(lightintensity, lightintensity, lightintensity);
@@ -182,12 +184,12 @@ int main() {
 
 		earthRotY += earthSpinSpeed * deltaTime;
 		float scale = (cos(time) + 1.0f) / 2.0f;
-		scale = 1;
-		earthMesh.load(ew::createEarth(40075.0f * Constants::scaleRatio, 20000.0f * Constants::scaleRatio, 6357.0f * Constants::scaleRatio, 64, scale));
+		//scale = 1;
+		earthMesh.load(ew::createEarth(40075.0f * Constants::scaleRatio, 20000.0f * Constants::scaleRatio, 6357.0f * Constants::scaleRatio, 64, scale, 0.0f));
 
 		earthTransform.rotation = ew::Vec3(
 			lerp(180.0f, earthAxialTilt, scale),
-			lerp(earthRotY / 365.25f, earthRotY, scale),
+			lerp(earthRotY / 365.25f + 90.f, earthRotY, scale),
 			lerp(180.0f, 0.0f, scale));
 
 		earthShader.use();

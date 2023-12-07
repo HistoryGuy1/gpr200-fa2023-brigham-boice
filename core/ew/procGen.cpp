@@ -99,7 +99,7 @@ namespace ew {
 		return a * (1.0 - f) + (b * f);
 	}
 
-	MeshData createEarth(float width, float height, float radius, int subdivisions, float scale)
+	MeshData createEarth(float width, float height, float radius, int subdivisions, float scale, float intensity)
 	{
 		MeshData mesh;
 
@@ -107,6 +107,7 @@ namespace ew {
 		float thetaStep = ew::TAU / subdivisions;
 		float phiStep = ew::PI / subdivisions;
 		int columns = subdivisions + 1;
+
 		for (size_t row = 0; row <= subdivisions; row++)
 		{
 			float phi = row * phiStep;
@@ -116,26 +117,31 @@ namespace ew {
 
 				Vertex v;
 
-				//plane
+				// BOB GET HEIGHT HERE
+				float earthHeight = 0.0f;
+
+				//---------------------plane
+
 				ew::Vec2 planeUV = ew::Vec2(0.0f);
 				planeUV.x = ((float)col / subdivisions);
 				planeUV.y = ((float)row / subdivisions);
 
 				ew::Vec3 planePosition = ew::Vec3(0.0f);
 				planePosition.x = -width / 2 + width * planeUV.x;
-				planePosition.y = 0;
-				planePosition.z = height / 2 - height * planeUV.y;
+				planePosition.z = earthHeight;
+				planePosition.y = height / 2 - height * planeUV.y;
 
-				ew::Vec3 planeNormal = ew::Vec3(0, 1, 0);
+				ew::Vec3 planeNormal = ew::Vec3(0, 0, 1);
 
-				//sphere
+				//---------------------sphere
+
 				ew::Vec3 sphereNormal = ew::Vec3(0.0f);
 				sphereNormal.x = cosf(theta) * sinf(phi);
 				sphereNormal.y = cosf(phi);
 				sphereNormal.z = sinf(theta) * sinf(phi);
 
 				ew::Vec3 spherePosition = ew::Vec3(0.0f);
-				spherePosition = sphereNormal * radius;
+				spherePosition = sphereNormal * radius + earthHeight;
 
 				ew::Vec2 sphereUV = ew::Vec2(0.0f);
 				sphereUV.x = (float)col / subdivisions;
